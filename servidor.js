@@ -7,8 +7,8 @@ var jwt = require('jwt-simple'); // 🔑 Librería para JWT
 const { createClient } = require('@supabase/supabase-js');
 
 // 2. Configuración directa con tu URL y tu Key de Supabase
-const supabaseUrl = 'https://eduzgekecoxxbimswfvp.supabase.co';
-const supabaseKey = 'sb_publishable_q5ReC5L87fcCOY52BbETuw_iEk_LBvr';
+const supabaseUrl = 'https://jggyukignskrzfylcajy.supabase.co';
+const supabaseKey = 'sb_publishable_IcLnuKJW9xW0Z07xY5CZaQ_9Se_8s-_';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
