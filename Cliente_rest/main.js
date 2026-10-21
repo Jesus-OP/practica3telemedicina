@@ -46,7 +46,11 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
-        //let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
+        // Pre-cargamos todas las áreas registradas con un valor inicial de 0
+        for (let id in MAPA_AREAS) {
+            contadorAreas[id] = 0;
+        }
+        let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
@@ -67,7 +71,7 @@ async function cargarRankingMinisterio() {
                     // 1. Extraer campos
                     let nombre = String(reserva.nombre || reserva.nombre_sanitario || "").trim();
                     let apellidos = String(reserva.apellidos || reserva.apellidos_sanitario || "").trim();
-                    let categoria = String(reserva["categoría"] ||reserva.categoria|| "").trim();
+                    let categoria = String(reserva["categoría"] || "").trim();
                     
                     let horasRaw = reserva.horas_estimadas ?? reserva.horasEstimadas;
                     let horas = (horasRaw !== undefined && horasRaw !== null) ? String(horasRaw).trim() : "";
@@ -82,17 +86,18 @@ async function cargarRankingMinisterio() {
                         horas === "" || horas === "null" ||
                         fecPet === "" || fecPet === "null" || fecPet.startsWith("0000-00-00")
                     ) {
+                        console.warn("🚫 Reserva incompleta descartada (ej. faltan horas/categoria/fecPet):", reserva);
                         continue;
                     }
 
                     // 3. 🎯 CLAVE ÚNICA CORREGIDA: Incluye idArea y excluye fecIni/fecFin
-                    /*let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
+                    //let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
 
-                    if (reservasVistas.has(claveUnica)) {
-                        continue; // Omite duplicados dentro de la misma área
-                    }
+                    //if (reservasVistas.has(claveUnica)) {
+                    //    continue; // Omite duplicados dentro de la misma área
+                    //}
 
-                    reservasVistas.add(claveUnica);*/
+                    //reservasVistas.add(claveUnica);
 
                     // Acumular conteo
                     if (!contadorAreas[idArea]) {
@@ -105,14 +110,13 @@ async function cargarRankingMinisterio() {
 
         // Convertir a Array y ordenar
         let ranking = [];
-        for (let id in contadorAreas) {
-            if (contadorAreas[id] > 0) {
-                ranking.push({
-                    idArea: id,
-                    nombre: MAPA_AREAS[id],
-                    total: contadorAreas[id]
-                });
-            }
+        // Recorremos el MAPA_AREAS completo para asegurarnos de meter TODAS en la tabla
+        for (let id in MAPA_AREAS) {
+            ranking.push({
+                idArea: id,
+                nombre: MAPA_AREAS[id],
+                total: contadorAreas[id]
+            });
         }
 
         ranking.sort((a, b) => b.total - a.total);
