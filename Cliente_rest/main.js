@@ -46,7 +46,7 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
-        let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
+        //let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
@@ -86,13 +86,13 @@ async function cargarRankingMinisterio() {
                     }
 
                     // 3. 🎯 CLAVE ÚNICA CORREGIDA: Incluye idArea y excluye fecIni/fecFin
-                    let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
+                    /*let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
 
                     if (reservasVistas.has(claveUnica)) {
                         continue; // Omite duplicados dentro de la misma área
                     }
 
-                    reservasVistas.add(claveUnica);
+                    reservasVistas.add(claveUnica);*/
 
                     // Acumular conteo
                     if (!contadorAreas[idArea]) {
