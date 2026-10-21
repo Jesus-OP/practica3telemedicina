@@ -46,55 +46,64 @@ async function cargarRankingMinisterio() {
         }
 
         let contadorAreas = {};
-        let reservasVistas = []; // Lista simple para no contar reservas duplicadas
+        let reservasVistas = new Set(); // 🚀 Uso de Set para máximo rendimiento
 
         for (let registro of datosMinisterio) {
             let idArea = registro.id_area;
 
-            // 🛑 Ignorar cualquier área que no esté registrada en MAPA_AREAS
-            if (!MAPA_AREAS[idArea]) {
-                continue;
-            }
+            // 🛑 Ignorar cualquier área no válida
+            if (!MAPA_AREAS[idArea]) continue;
+
+            // Validar cabecera de fecha
+            let fechaEnvio = String(registro.fecha || "").trim();
+            if (fechaEnvio === "" || fechaEnvio === "undefined" || fechaEnvio === "null") continue;
 
             let listaReservas = registro.datos;
 
             if (Array.isArray(listaReservas)) {
-                for (let res of listaReservas) {
-                    if (!res) continue;
+                for (let reserva of listaReservas) {
+                    if (!reserva) continue;
 
-                    // 1. Extraer los campos de la reserva limpiando espacios
-                    let nombre = String(res.nombre || res.nombre_sanitario || "").trim();
-                    let apellidos = String(res.apellidos || res.apellidos_sanitario || "").trim();
-                    let categoria = String(res.categoría || res.categoria || "").trim();
-                    let horas = res.horas_estimadas ?? res.horasEstimadas;
-                    let fecPet = String(res.fec_pet || res.fecha_peticion || "").trim();
-                    let fecIni = res.fec_ini ? String(res.fec_ini).trim() : "null";
-                    let fecFin = res.fecha_fin ? String(res.fecha_fin).trim() : "null";
+                    // 1. Extraer campos
+                    let nombre = String(reserva.nombre || reserva.nombre_sanitario || "").trim();
+                    let apellidos = String(reserva.apellidos || reserva.apellidos_sanitario || "").trim();
+                    let categoria = String(reserva["categoría"] ||reserva.categoria|| "").trim();
+                    
+                    let horasRaw = reserva.horas_estimadas ?? reserva.horasEstimadas;
+                    let horas = (horasRaw !== undefined && horasRaw !== null) ? String(horasRaw).trim() : "";
+                    
+                    let fecPet = String(reserva.fec_pet || reserva.fecha_peticion || "").trim();
 
-                    // 2. Comprobar que tenga los campos obligatorios rellenos
-                    if (nombre === "" || apellidos === "" || categoria === "" || horas === undefined || horas === null || horas === "" || fecPet === "") {
+                    // 2. Filtro de campos obligatorios vacíos o nulos
+                    if (
+                        nombre === "" || nombre === "null" || nombre === "undefined" ||
+                        apellidos === "" || apellidos === "null" || apellidos === "undefined" ||
+                        categoria === "" || categoria === "null" ||
+                        horas === "" || horas === "null" ||
+                        fecPet === "" || fecPet === "null" || fecPet.startsWith("0000-00-00")
+                    ) {
                         continue;
                     }
 
-                    // 3. Crear texto único para comprobar si la reserva está repetida
-                    let claveUnica = `${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}|${fecIni}|${fecFin}`;
+                    // 3. 🎯 CLAVE ÚNICA CORREGIDA: Incluye idArea y excluye fecIni/fecFin
+                    let claveUnica = `${idArea}|${nombre.toLowerCase()}|${apellidos.toLowerCase()}|${categoria.toLowerCase()}|${horas}|${fecPet}`;
 
-                    if (reservasVistas.includes(claveUnica)) {
-                        console.warn("⚠️ Reserva duplicada omitida:", claveUnica);
-                        continue;
+                    if (reservasVistas.has(claveUnica)) {
+                        continue; // Omite duplicados dentro de la misma área
                     }
 
-                    reservasVistas.push(claveUnica);
+                    reservasVistas.add(claveUnica);
 
+                    // Acumular conteo
                     if (!contadorAreas[idArea]) {
                         contadorAreas[idArea] = 0;
                     }
-                    contadorAreas[idArea] = contadorAreas[idArea] + 1;
+                    contadorAreas[idArea]++;
                 }
             }
         }
 
-        // Pasar los resultados a un array para poder ordenarlo de mayor a menor
+        // Convertir a Array y ordenar
         let ranking = [];
         for (let id in contadorAreas) {
             if (contadorAreas[id] > 0) {
@@ -109,7 +118,7 @@ async function cargarRankingMinisterio() {
         ranking.sort((a, b) => b.total - a.total);
 
         if (ranking.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='3'>No hay reservas válidas ni únicas para mostrar.</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='3'>No hay reservas válidas para mostrar.</td></tr>";
             return;
         }
 
